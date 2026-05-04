@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>두손푸드 AI-MES — LOT 추적</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+  <style>
+    .search-bar {
+      display: flex; gap: var(--space-3);
+      background: var(--color-surface);
+      border: 2px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-5);
+      box-shadow: 0 0 0 4px rgba(15,76,129,0.08);
+    }
+    .search-bar input {
+      flex: 1; border: none; outline: none;
+      font-size: 15px; font-family: var(--font-mono);
+      color: var(--color-text);
+    }
+    .timeline-item {
+      display: flex; gap: var(--space-4);
+      padding: var(--space-3) 0;
+      position: relative;
+    }
+    .timeline-item::before {
+      content: ''; position: absolute;
+      left: 19px; top: 40px; bottom: 0;
+      width: 2px; background: var(--color-border);
+    }
+    .timeline-item:last-child::before { display: none; }
+    .timeline-dot {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+      border: 2px solid;
+    }
+    .timeline-dot.pass { background: var(--color-success-bg); border-color: var(--color-success); }
+    .timeline-dot.fail { background: var(--color-critical-bg); border-color: var(--color-critical); }
+    .timeline-dot.warn { background: var(--color-warning-bg); border-color: var(--color-warning); }
+    .timeline-content { flex: 1; padding-top: var(--space-2); }
+    .timeline-label { font-weight: 600; font-size: 13px; }
+    .timeline-meta { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+
+    .recall-alert {
+      background: var(--color-critical-bg);
+      border: 2px solid var(--color-critical);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+    .recall-alert h3 { color: var(--color-critical); font-size: 15px; margin-bottom: var(--space-2); }
+
+    /* LOT Tree */
+    .tree-node {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      padding: var(--space-2) var(--space-3);
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .tree-node:hover { border-color: var(--color-primary); background: rgba(15,76,129,0.03); }
+    .tree-node.selected { border-color: var(--color-primary); background: rgba(15,76,129,0.06); }
+    .tree-children { margin-left: 28px; border-left: 2px solid var(--color-border); padding-left: 12px; margin-top: 4px; }
+    .tree-node-code { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+    .tree-node-name { font-size: 12px; color: var(--color-text-secondary); }
+    .tree-node-meta { font-size: 11px; color: var(--color-text-muted); margin-left: auto; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">DS</div>
+      <div>
+        <div class="sidebar-logo-text">두손푸드 MES</div>
+        <div class="sidebar-logo-sub">AI 스마트공장</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">메인</div>
+      <a class="nav-item" href="index.html"><span class="icon">📊</span> KPI 대시보드</a>
+      <a class="nav-item" href="#"><span class="icon">🔔</span> 알림센터 <span class="nav-badge">3</span></a>
+      <div class="nav-section-label">생산</div>
+      <a class="nav-item" href="#"><span class="icon">📋</span> 생산지시 관리</a>
+      <a class="nav-item active" href="lot-trace.html"><span class="icon">🔗</span> LOT 추적</a>
+      <a class="nav-item" href="#"><span class="icon">🗂</span> BOM 관리</a>
+      <div class="nav-section-label">품질·안전</div>
+      <a class="nav-item" href="quality.html"><span class="icon">🌡</span> 품질 모니터링</a>
+      <a class="nav-item" href="#"><span class="icon">☢</span> X-Ray 검출</a>
+      <a class="nav-item" href="#"><span class="icon">✅</span> HACCP 점검</a>
+      <div class="nav-section-label">설비</div>
+      <a class="nav-item" href="#"><span class="icon">⚙</span> 설비 현황</a>
+      <a class="nav-item" href="#"><span class="icon">🔧</span> 정비 관리</a>
+      <div class="nav-section-label">AI</div>
+      <a class="nav-item" href="#"><span class="icon">🤖</span> AI Agent</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">정</div>
+        <div>
+          <div class="user-name">정훈</div>
+          <div class="user-role">품질팀 LOT 추적 담당</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">🔗 LOT 트레이서빌리티</div>
+        <div class="topbar-meta">원자재 입고 → 공정 → 완제품 → 출하 전 구간 추적</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm">📤 PDF 보고서</button>
+        <button class="btn btn-danger btn-sm">🚨 회수 시뮬레이션</button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- 검색 -->
+      <div class="search-bar">
+        <span style="font-size:18px;">🔍</span>
+        <input type="text" value="DS-20261201-HMR001-0001" placeholder="LOT 코드, 바코드, 제품명 검색..." />
+        <button class="btn btn-primary">추적</button>
+        <button class="btn btn-outline">역추적 ↑</button>
+        <button class="btn btn-outline">전방추적 ↓</button>
+      </div>
+
+      <!-- 회수 경보 (CCP 이탈 관련) -->
+      <div class="recall-alert">
+        <h3>🚨 연관 LOT 이슈 감지</h3>
+        <p style="font-size:13px;">이 LOT와 동일 원자재(DS-20261129-BEEF-018)를 사용한 <strong>DS-20261201-떡갈비-003</strong>에서 CCP-2 이탈이 발생했습니다. 해당 LOT는 현재 <span class="badge critical">보류(ON_HOLD)</span> 상태입니다.</p>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:var(--space-4);">
+
+        <!-- LOT 기본정보 -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📦 LOT 기본 정보</div>
+              <span class="badge success">ACTIVE</span>
+            </div>
+            <div class="card-body">
+              <table style="font-size:13px;">
+                <tbody>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0; white-space:nowrap;">LOT 코드</td><td class="font-mono"><strong>DS-20261201-HMR001-0001</strong></td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">제품명</td><td>햄버거패티 200g</td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">LOT 유형</td><td><span class="lot-type-badge lot-type-fg">완제품(FG)</span></td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">수량</td><td>2,000 개</td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">생산일</td><td>2026-12-01 14:32</td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">유통기한</td><td>2027-03-01</td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">작업지시</td><td class="font-mono">WO-20261201-0001</td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">생산 라인</td><td>A라인</td></tr>
+                  <tr><td style="color:var(--color-text-secondary); padding:4px 12px 4px 0;">보관 위치</td><td>냉동창고 A-3-12</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 품질 요약 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">✅ 품질 검사 결과</div>
+            </div>
+            <div class="card-body" style="padding: var(--space-3);">
+              <div class="timeline-item">
+                <div class="timeline-dot pass">🌡</div>
+                <div class="timeline-content">
+                  <div class="timeline-label">CCP-1 살균온도 — 합격</div>
+                  <div class="timeline-meta">측정값: 121.8°C (기준: ≥ 121°C) · 12:45</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot pass">🔥</div>
+                <div class="timeline-content">
+                  <div class="timeline-label">CCP-2 F값 — 합격</div>
+                  <div class="timeline-meta">F0 = 10.4분 (기준: ≥ 10분) · 13:10 · AI 예측: 10.8분</div>
+                  <div class="ai-confidence mt-2">
+                    <span>AI 신뢰도</span>
+                    <div class="confidence-bar"><div class="confidence-fill" style="width:88%"></div></div>
+                    <strong>88%</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot warn">☢</div>
+                <div class="timeline-content">
+                  <div class="timeline-label">X-Ray 이물 검출 — 주의</div>
+                  <div class="timeline-meta">검사 2,000개 중 NG 3건 (뼈 조각 추정) — 해당 개체 제거 완료</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot pass">🏷</div>
+                <div class="timeline-content">
+                  <div class="timeline-label">CCP-3 금속검출 — 합격</div>
+                  <div class="timeline-meta">검출 0건 · 14:00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOT 계보 트리 -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🌳 LOT 계보 (역추적)</div>
+              <span class="text-muted">조회 0.3초 완료</span>
+            </div>
+            <div class="card-body" style="padding: var(--space-3);">
+
+              <!-- FG -->
+              <div class="tree-node selected">
+                <span class="lot-type-badge lot-type-fg">FG</span>
+                <div>
+                  <div class="tree-node-code">DS-20261201-HMR001-0001</div>
+                  <div class="tree-node-name">햄버거패티 200g · 2,000개</div>
+                </div>
+                <div class="tree-node-meta">생산 14:32</div>
+              </div>
+
+              <div class="tree-children">
+                <!-- WIP -->
+                <div class="tree-node">
+                  <span class="lot-type-badge lot-type-wip">WIP</span>
+                  <div>
+                    <div class="tree-node-code">DS-20261201-WIP-003</div>
+                    <div class="tree-node-name">성형 반제품 · 2,050개</div>
+                  </div>
+                  <div class="tree-node-meta">11:20</div>
+                </div>
+
+                <div class="tree-children">
+                  <div class="tree-node">
+                    <span class="lot-type-badge lot-type-wip">WIP</span>
+                    <div>
+                      <div class="tree-node-code">DS-20261201-WIP-001</div>
+                      <div class="tree-node-name">혼합 반제품 · 2,100kg</div>
+                    </div>
+                    <div class="tree-node-meta">09:00</div>
+                  </div>
+
+                  <div class="tree-children">
+                    <div class="tree-node">
+                      <span class="lot-type-badge lot-type-raw">RAW</span>
+                      <div>
+                        <div class="tree-node-code">DS-20261129-BEEF-018</div>
+                        <div class="tree-node-name">우육 분쇄육 · 1,200kg</div>
+                      </div>
+                      <div class="tree-node-meta" style="color:var(--color-warning);">⚠ 연관 이슈</div>
+                    </div>
+                    <div class="tree-node">
+                      <span class="lot-type-badge lot-type-raw">RAW</span>
+                      <div>
+                        <div class="tree-node-code">DS-20261129-ONION-004</div>
+                        <div class="tree-node-name">양파 · 300kg · 신선채소농협</div>
+                      </div>
+                      <div class="tree-node-meta">입고 11/29</div>
+                    </div>
+                    <div class="tree-node">
+                      <span class="lot-type-badge lot-type-raw">RAW</span>
+                      <div>
+                        <div class="tree-node-code">DS-20261128-BREAD-011</div>
+                        <div class="tree-node-name">빵가루 · 80kg · 삼립식품</div>
+                      </div>
+                      <div class="tree-node-meta">입고 11/28</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 포장재 -->
+                <div class="tree-node">
+                  <span class="lot-type-badge lot-type-raw">RAW</span>
+                  <div>
+                    <div class="tree-node-code">DS-20261130-PACK-022</div>
+                    <div class="tree-node-name">포장재(PE) · 2,200장 · 대한포장</div>
+                  </div>
+                  <div class="tree-node-meta">입고 11/30</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 회수 시뮬레이션 결과 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🚨 회수 시뮬레이션 — BEEF-018 기준</div>
+              <button class="btn btn-outline btn-sm">상세 보고서</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>완제품 LOT</th><th>제품</th><th>수량</th><th>상태</th><th>조치</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="font-mono" style="font-size:11px;">DS-20261201-HMR001-0001</td>
+                    <td>햄버거패티 200g</td>
+                    <td>2,000개</td>
+                    <td><span class="badge success">재고</span></td>
+                    <td><button class="btn btn-danger btn-sm">보류</button></td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono" style="font-size:11px;">DS-20261201-HMR001-0002</td>
+                    <td>햄버거패티 200g</td>
+                    <td>1,800개</td>
+                    <td><span class="badge warning">출하됨</span></td>
+                    <td><button class="btn btn-danger btn-sm">회수 통보</button></td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono" style="font-size:11px;">DS-20261201-떡갈비-003</td>
+                    <td>떡갈비 150g</td>
+                    <td>1,500개</td>
+                    <td><span class="badge critical">보류중</span></td>
+                    <td><span class="text-muted">완료</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

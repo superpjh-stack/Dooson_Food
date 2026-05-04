@@ -1,0 +1,28 @@
+{
+  "kpi": {
+    "production_rate": { "value": 94.2, "unit": "%", "delta": 2.1, "direction": "up" },
+    "quality_rate":    { "value": 99.1, "unit": "%", "delta": 0.3, "direction": "up" },
+    "oee":             { "value": 87.5, "unit": "%", "delta": -1.2, "direction": "down" },
+    "lot_traceability":{ "value": 100,  "unit": "%", "delta": 0,   "direction": "up" },
+    "ccp_compliance":  { "value": 98.7, "unit": "%", "delta": 1.5, "direction": "up" }
+  },
+  "work_orders_today": [
+    { "code": "WO-20261201-0001", "product": "햄버거패티 200g", "line": "A라인", "target": 2000, "done": 1840, "status": "IN_PROGRESS", "progress": 92 },
+    { "code": "WO-20261201-0002", "product": "떡갈비 150g",    "line": "B라인", "target": 1500, "done": 1500, "status": "COMPLETED",   "progress": 100 },
+    { "code": "WO-20261201-0003", "product": "너비아니 100g",  "line": "C라인", "target": 3000, "done": 980,  "status": "IN_PROGRESS", "progress": 33 },
+    { "code": "WO-20261201-0004", "product": "갈비찜 HMR",     "line": "A라인", "target": 800,  "done": 0,    "status": "PLANNED",      "progress": 0 }
+  ],
+  "alerts": [
+    { "severity": "critical", "title": "CCP-2 온도 이탈 감지", "body": "B라인 살균기 온도 118.3°C (기준: 121°C 이상) — LOT DS-20261201-떡갈비-003 보류 처리", "time": "2분 전", "lot": "DS-20261201-떡갈비-003" },
+    { "severity": "warning",  "title": "F-value AI 예측 경보", "body": "A라인 살균기 F0 목표치 미달 예측 (예측: 8.2분, 목표: 10분) — 15분 내 조치 권장", "time": "8분 전" },
+    { "severity": "warning",  "title": "설비 이상 예측", "body": "C라인 충진기 진동 이상 패턴 감지 — 4시간 내 고장 확률 73% (LSTM 예측)", "time": "23분 전" },
+    { "severity": "info",     "title": "LOT 출하 완료", "body": "DS-20261201-떡갈비-001 외 12 LOT 출하 처리 완료", "time": "1시간 전" }
+  ],
+  "equipment_status": [
+    { "name": "A라인 살균기", "status": "running", "oee": 91.2, "temp": 122.1 },
+    { "name": "B라인 살균기", "status": "fault",   "oee": 0,    "temp": 118.3 },
+    { "name": "C라인 충진기", "status": "running", "oee": 85.4, "vibration": "이상" },
+    { "name": "X-Ray #1",    "status": "running", "oee": 98.1, "ng_today": 3 },
+    { "name": "X-Ray #2",    "status": "idle",    "oee": 0,    "ng_today": 0 }
+  ]
+}

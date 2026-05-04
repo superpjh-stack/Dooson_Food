@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── shadcn/ui 기본 토큰 ── */
+    --background: 210 20% 95%;
+    --foreground: 217 32% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 217 32% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 32% 15%;
+
+    /* 공업 블루 #0F4C81 → HSL 209 78% 28% */
+    --primary: 209 78% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    /* 두손 그린 #1B5E20 → HSL 123 55% 23% */
+    --secondary: 123 55% 23%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* 청록 AI 액센트 #00BCD4 → HSL 187 100% 42% */
+    --accent: 187 100% 42%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 209 78% 28%;
+
+    --radius: 0.5rem;
+
+    /* ── MES 도메인 시맨틱 컬러 ── */
+    --color-critical: 0 72% 41%;
+    --color-critical-bg: 0 86% 97%;
+    --color-warning: 27 87% 47%;
+    --color-warning-bg: 33 100% 96%;
+    --color-info: 200 72% 40%;
+    --color-info-bg: 200 100% 96%;
+    --color-success: 122 39% 40%;
+    --color-success-bg: 138 76% 97%;
+
+    /* ── 사이드바 ── */
+    --sidebar: 218 40% 12%;
+    --sidebar-foreground: 210 20% 90%;
+
+    /* ── 타이포그래피 ── */
+    --font-sans: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* 숫자/코드는 모노스페이스 */
+  .font-lot-code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer components {
+  /* ── 사이드바 ── */
+  .sidebar-nav-item {
+    @apply flex items-center gap-3 px-4 py-2 text-sm text-white/60
+           rounded-none border-l-[3px] border-transparent
+           hover:text-white hover:bg-white/5 transition-all duration-150;
+  }
+  .sidebar-nav-item.active {
+    @apply text-white bg-primary/30 border-l-accent;
+  }
+
+  /* ── KPI 카드 상단 컬러 바 ── */
+  .kpi-card-bar::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-[3px] rounded-t-md;
+  }
+
+  /* ── AI 신뢰도 텍스트 색상 ── */
+  .confidence-high   { @apply text-accent; }
+  .confidence-medium { @apply text-warning; }
+  .confidence-low    { @apply text-muted-foreground; }
+}

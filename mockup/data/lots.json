@@ -1,0 +1,58 @@
+{
+  "lot": {
+    "id": "lot-fg-001",
+    "code": "DS-20261201-HMR001-0001",
+    "type": "FG",
+    "product": "햄버거패티 200g",
+    "qty": 2000,
+    "unit": "개",
+    "status": "ACTIVE",
+    "produced_at": "2026-12-01T14:32:00+09:00",
+    "expiry_date": "2027-03-01",
+    "work_order": "WO-20261201-0001",
+    "line": "A라인"
+  },
+  "lineage_tree": {
+    "node": {
+      "code": "DS-20261201-HMR001-0001",
+      "type": "FG", "product": "햄버거패티 200g", "qty": 2000,
+      "status": "ACTIVE", "produced_at": "2026-12-01 14:32"
+    },
+    "children": [
+      {
+        "node": { "code": "DS-20261201-WIP-003", "type": "WIP", "product": "성형 반제품", "qty": 2050, "status": "CONSUMED", "produced_at": "2026-12-01 11:20" },
+        "children": [
+          {
+            "node": { "code": "DS-20261201-WIP-001", "type": "WIP", "product": "혼합 반제품", "qty": 2100, "status": "CONSUMED", "produced_at": "2026-12-01 09:00" },
+            "children": [
+              { "node": { "code": "DS-20261129-BEEF-018", "type": "RAW", "product": "우육 분쇄육", "qty": 1200, "unit": "kg", "status": "CONSUMED", "supplier": "한국축산(주)", "received_at": "2026-11-29" }, "children": [] },
+              { "node": { "code": "DS-20261129-ONION-004", "type": "RAW", "product": "양파", "qty": 300, "unit": "kg", "status": "CONSUMED", "supplier": "신선채소농협", "received_at": "2026-11-29" }, "children": [] },
+              { "node": { "code": "DS-20261128-BREAD-011", "type": "RAW", "product": "빵가루", "qty": 80, "unit": "kg", "status": "CONSUMED", "supplier": "삼립식품", "received_at": "2026-11-28" }, "children": [] }
+            ]
+          }
+        ]
+      },
+      {
+        "node": { "code": "DS-20261130-PACK-022", "type": "RAW", "product": "포장재 (PE)", "qty": 2200, "unit": "장", "status": "CONSUMED", "supplier": "대한포장", "received_at": "2026-11-30" },
+        "children": []
+      }
+    ]
+  },
+  "quality_records": {
+    "ccp": [
+      { "ccp": "CCP-1 살균온도", "value": "121.8°C", "limit": "≥ 121°C", "pass": true, "measured_at": "12:45" },
+      { "ccp": "CCP-2 F값",     "value": "10.4분",  "limit": "≥ 10분",   "pass": true, "measured_at": "13:10" },
+      { "ccp": "CCP-3 금속검출", "value": "0건",     "limit": "= 0건",    "pass": true, "measured_at": "14:00" }
+    ],
+    "xray": { "total": 2000, "ok": 1997, "ng": 3, "ng_rate": 0.15, "contaminant": "bone" }
+  },
+  "search_result": {
+    "query": "DS-20261129-BEEF-018",
+    "type": "RAW",
+    "affected_fg_lots": [
+      { "code": "DS-20261201-HMR001-0001", "product": "햄버거패티 200g", "qty": 2000, "status": "ACTIVE",   "shipped": false },
+      { "code": "DS-20261201-HMR001-0002", "product": "햄버거패티 200g", "qty": 1800, "status": "SHIPPED",  "shipped": true,  "customer": "롯데마트 전점" },
+      { "code": "DS-20261201-떡갈비-003",  "product": "떡갈비 150g",    "qty": 1500, "status": "ON_HOLD", "shipped": false }
+    ]
+  }
+}

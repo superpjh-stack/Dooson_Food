@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>두손푸드 AI-MES — 품질 모니터링</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+  <style>
+    /* F-value real-time chart */
+    .fv-chart-wrap {
+      background: linear-gradient(135deg, #F0F4F9 0%, #EAF5FF 100%);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      position: relative; height: 160px;
+    }
+    .fv-svg { width: 100%; height: 100%; }
+    .fv-threshold-label {
+      position: absolute; right: var(--space-4); top: 50%;
+      font-size: 11px; color: var(--color-critical);
+      font-weight: 600; transform: translateY(-50%);
+    }
+
+    /* CCP status grid */
+    .ccp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+    .ccp-card {
+      border-radius: var(--radius-md); padding: var(--space-4);
+      border: 2px solid; text-align: center;
+    }
+    .ccp-card.pass { border-color: var(--color-success); background: var(--color-success-bg); }
+    .ccp-card.fail { border-color: var(--color-critical); background: var(--color-critical-bg); }
+    .ccp-card.warn { border-color: var(--color-warning); background: var(--color-warning-bg); }
+    .ccp-code { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; opacity: 0.7; margin-bottom: 4px; }
+    .ccp-name { font-size: 12px; font-weight: 600; margin-bottom: var(--space-3); }
+    .ccp-value { font-size: 26px; font-weight: 800; line-height: 1; }
+    .ccp-limit { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+    .ccp-status { font-size: 18px; margin-top: var(--space-2); }
+
+    /* X-Ray panel */
+    .xray-panel {
+      display: flex; gap: var(--space-4);
+      align-items: flex-start;
+    }
+    .xray-image {
+      width: 180px; height: 160px;
+      background: #111;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; position: relative;
+      overflow: hidden;
+    }
+    .xray-image-label {
+      position: absolute; bottom: var(--space-2); left: 0; right: 0;
+      text-align: center; color: rgba(255,255,255,0.7); font-size: 11px;
+    }
+    .ng-marker {
+      position: absolute; width: 32px; height: 32px;
+      border: 2px solid red; border-radius: 50%;
+      top: 40%; left: 45%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ng-marker::after {
+      content: ''; width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(255,0,0,0.4);
+    }
+    /* Grad-CAM heatmap effect */
+    .xray-heatmap {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 55% 45%, rgba(255,0,0,0.35) 0%, transparent 50%);
+    }
+    .xray-base {
+      width: 100%; height: 100%; opacity: 0.8;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 8px,
+        rgba(255,255,255,0.03) 8px, rgba(255,255,255,0.03) 9px
+      ),
+      repeating-linear-gradient(
+        90deg, transparent, transparent 8px,
+        rgba(255,255,255,0.03) 8px, rgba(255,255,255,0.03) 9px
+      );
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">DS</div>
+      <div>
+        <div class="sidebar-logo-text">두손푸드 MES</div>
+        <div class="sidebar-logo-sub">AI 스마트공장</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">메인</div>
+      <a class="nav-item" href="index.html"><span class="icon">📊</span> KPI 대시보드</a>
+      <a class="nav-item" href="#"><span class="icon">🔔</span> 알림센터 <span class="nav-badge">3</span></a>
+      <div class="nav-section-label">생산</div>
+      <a class="nav-item" href="#"><span class="icon">📋</span> 생산지시 관리</a>
+      <a class="nav-item" href="lot-trace.html"><span class="icon">🔗</span> LOT 추적</a>
+      <a class="nav-item" href="#"><span class="icon">🗂</span> BOM 관리</a>
+      <div class="nav-section-label">품질·안전</div>
+      <a class="nav-item active" href="quality.html"><span class="icon">🌡</span> 품질 모니터링</a>
+      <a class="nav-item" href="#"><span class="icon">☢</span> X-Ray 검출</a>
+      <a class="nav-item" href="#"><span class="icon">✅</span> HACCP 점검</a>
+      <div class="nav-section-label">설비</div>
+      <a class="nav-item" href="#"><span class="icon">⚙</span> 설비 현황</a>
+      <a class="nav-item" href="#"><span class="icon">🔧</span> 정비 관리</a>
+      <div class="nav-section-label">AI</div>
+      <a class="nav-item" href="#"><span class="icon">🤖</span> AI Agent</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">이</div>
+        <div>
+          <div class="user-name">이품질</div>
+          <div class="user-role">품질팀장</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">🌡 품질 모니터링</div>
+        <div class="topbar-meta">F-value · CCP · X-Ray 이물 검출 통합 현황</div>
+      </div>
+      <div class="topbar-actions">
+        <div style="display:flex; gap:var(--space-2); align-items:center; font-size:12px; color:var(--color-text-secondary);">
+          <span class="status-dot running"></span> 실시간 연동중
+        </div>
+        <button class="btn btn-outline btn-sm">필터</button>
+        <button class="btn btn-primary btn-sm">📥 CCP 기록 등록</button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- CCP 현황 카드 -->
+      <div class="section-title">📍 CCP 현재 상태 — A라인 (WO-20261201-0001)</div>
+      <div class="ccp-grid mb-4">
+        <div class="ccp-card pass">
+          <div class="ccp-code">CCP-1</div>
+          <div class="ccp-name">살균 온도</div>
+          <div class="ccp-value" style="color:var(--color-success);">122.1<span style="font-size:14px;">°C</span></div>
+          <div class="ccp-limit">기준: ≥ 121°C</div>
+          <div class="ccp-status">✅</div>
+        </div>
+        <div class="ccp-card pass">
+          <div class="ccp-code">CCP-2</div>
+          <div class="ccp-name">F값 (F0)</div>
+          <div class="ccp-value" style="color:var(--color-success);">10.4<span style="font-size:14px;">분</span></div>
+          <div class="ccp-limit">기준: ≥ 10분</div>
+          <div class="ccp-status">✅ AI 예측: 10.8분</div>
+        </div>
+        <div class="ccp-card pass">
+          <div class="ccp-code">CCP-3</div>
+          <div class="ccp-name">금속 검출</div>
+          <div class="ccp-value" style="color:var(--color-success);">0<span style="font-size:14px;">건</span></div>
+          <div class="ccp-limit">기준: 0건</div>
+          <div class="ccp-status">✅</div>
+        </div>
+      </div>
+
+      <!-- B라인 CCP 이탈 -->
+      <div class="ccp-grid mb-4">
+        <div class="ccp-card fail">
+          <div class="ccp-code">CCP-1 ⚠ B라인</div>
+          <div class="ccp-name">살균 온도 — 이탈!</div>
+          <div class="ccp-value" style="color:var(--color-critical);">118.3<span style="font-size:14px;">°C</span></div>
+          <div class="ccp-limit">기준: ≥ 121°C (▼ 2.7°C 미달)</div>
+          <div class="ccp-status">🚨 즉시 조치 필요</div>
+        </div>
+        <div class="ccp-card warn">
+          <div class="ccp-code">CCP-2 ⚠ B라인</div>
+          <div class="ccp-name">F값 — 부족 예측</div>
+          <div class="ccp-value" style="color:var(--color-warning);">7.2<span style="font-size:14px;">분</span></div>
+          <div class="ccp-limit">AI 예측 최종 F0 (목표 10분)</div>
+          <div class="ccp-status" style="font-size:12px;">
+            <div class="ai-confidence" style="justify-content:center;">
+              <span>AI</span>
+              <div class="confidence-bar" style="width:50px;"><div class="confidence-fill" style="width:91%;"></div></div>
+              <strong>91%</strong>
+            </div>
+          </div>
+        </div>
+        <div class="ccp-card pass">
+          <div class="ccp-code">CCP-3 B라인</div>
+          <div class="ccp-name">금속 검출</div>
+          <div class="ccp-value" style="color:var(--color-success);">0<span style="font-size:14px;">건</span></div>
+          <div class="ccp-limit">정상</div>
+          <div class="ccp-status">✅</div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1.4fr 1fr; gap:var(--space-4);">
+        <!-- Left: F-value 차트 -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📉 F-value 실시간 차트 — A라인 살균기</div>
+              <div style="display:flex; gap:var(--space-3); font-size:11px; align-items:center;">
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:20px; height:2px; background:var(--color-primary-light); display:inline-block;"></span>실측</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:20px; height:2px; background:var(--color-accent); display:inline-block; border-top: 2px dashed var(--color-accent);"></span>AI 예측</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:20px; height:2px; background:var(--color-critical); display:inline-block;"></span>기준선</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="fv-chart-wrap">
+                <svg class="fv-svg" viewBox="0 0 600 130" preserveAspectRatio="none">
+                  <!-- 기준선 (F0 = 10분) -->
+                  <line x1="0" y1="45" x2="600" y2="45" stroke="#D32F2F" stroke-width="1" stroke-dasharray="4 2" opacity="0.6"/>
+                  <text x="5" y="41" font-size="9" fill="#D32F2F" opacity="0.8">기준 10분</text>
+
+                  <!-- 실측 누적 F-value 곡선 -->
+                  <path class="chart-area"
+                    d="M 0 130 L 60 125 L 120 118 L 180 108 L 240 96 L 300 80 L 360 65 L 420 52 L 480 42 L 540 35 L 600 30 L 600 130 Z"
+                    fill="rgba(15,76,129,0.12)"/>
+                  <path class="chart-line"
+                    d="M 0 125 L 60 120 L 120 115 L 180 106 L 240 93 L 300 78 L 360 63 L 420 50 L 480 40 L 540 33 L 600 28"
+                    stroke="var(--color-primary-light)" stroke-width="2" fill="none"/>
+
+                  <!-- AI 예측 점선 (이후 구간) -->
+                  <path class="chart-line-ai"
+                    d="M 480 40 L 540 28 L 600 18"
+                    stroke="var(--color-accent)" stroke-width="2" fill="none" stroke-dasharray="6 3"/>
+
+                  <!-- 현재 시점 마커 -->
+                  <circle cx="480" cy="40" r="5" fill="var(--color-primary-light)"/>
+                  <text x="490" y="36" font-size="9" fill="var(--color-primary-light)">현재 10.4분</text>
+
+                  <!-- 온도 곡선 (회색) -->
+                  <path
+                    d="M 0 10 L 60 8 L 120 7 L 180 7 L 240 8 L 300 8 L 360 9 L 420 10 L 480 11 L 540 12 L 600 13"
+                    stroke="#90A4AE" stroke-width="1.5" fill="none" opacity="0.6" stroke-dasharray="2 2"/>
+
+                  <!-- X축 레이블 -->
+                  <text x="0"   y="125" font-size="8" fill="#90A4AE">12:30</text>
+                  <text x="100" y="125" font-size="8" fill="#90A4AE">12:40</text>
+                  <text x="200" y="125" font-size="8" fill="#90A4AE">12:50</text>
+                  <text x="300" y="125" font-size="8" fill="#90A4AE">13:00</text>
+                  <text x="400" y="125" font-size="8" fill="#90A4AE">13:10</text>
+                  <text x="500" y="125" font-size="8" fill="#90A4AE" font-weight="600">13:20</text>
+                </svg>
+                <div class="fv-threshold-label">기준선</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:var(--space-3); font-size:12px;">
+                <div>온도: <strong>122.1°C</strong> <span class="text-muted">(목표 ≥ 121°C)</span></div>
+                <div>압력: <strong>1.06 kgf/cm²</strong></div>
+                <div>예측 최종 F0: <strong style="color:var(--color-accent);">10.8분</strong> <span class="text-muted">(AI 88%)</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CCP 기록 이력 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 CCP 이탈 기록 — 오늘</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>시각</th><th>CCP</th><th>라인</th><th>측정값</th><th>기준</th><th>상태</th><th>조치</th></tr>
+                </thead>
+                <tbody>
+                  <tr style="background:var(--color-critical-bg);">
+                    <td>13:42</td>
+                    <td>CCP-1</td>
+                    <td>B라인</td>
+                    <td class="font-mono" style="color:var(--color-critical);"><strong>118.3°C</strong></td>
+                    <td>≥ 121°C</td>
+                    <td><span class="badge critical">이탈</span></td>
+                    <td><button class="btn btn-primary btn-sm">조치 입력</button></td>
+                  </tr>
+                  <tr>
+                    <td>10:15</td>
+                    <td>CCP-2</td>
+                    <td>A라인</td>
+                    <td class="font-mono">10.4분</td>
+                    <td>≥ 10분</td>
+                    <td><span class="badge success">합격</span></td>
+                    <td class="text-muted">—</td>
+                  </tr>
+                  <tr>
+                    <td>08:30</td>
+                    <td>CCP-3</td>
+                    <td>전체</td>
+                    <td class="font-mono">0건</td>
+                    <td>0건</td>
+                    <td><span class="badge success">합격</span></td>
+                    <td class="text-muted">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: X-Ray + AI -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+
+          <!-- X-Ray 이물 검출 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">☢ X-Ray 이물 검출 현황</div>
+              <span class="badge warning">오늘 NG 3건</span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex; justify-content:space-around; margin-bottom:var(--space-4);">
+                <div style="text-align:center;">
+                  <div style="font-size:28px; font-weight:800; color:var(--color-secondary);">99.85<span style="font-size:14px;">%</span></div>
+                  <div class="text-muted">합격률</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:28px; font-weight:800;">2,000</div>
+                  <div class="text-muted">총 검사 수</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:28px; font-weight:800; color:var(--color-warning);">3</div>
+                  <div class="text-muted">NG (뼈 조각)</div>
+                </div>
+              </div>
+
+              <!-- X-Ray 이미지 시뮬레이션 -->
+              <div style="font-size:12px; font-weight:600; margin-bottom:var(--space-2);">최근 NG 이미지 (13:05)</div>
+              <div class="xray-panel">
+                <div class="xray-image">
+                  <div class="xray-base"></div>
+                  <div class="xray-heatmap"></div>
+                  <div class="ng-marker"></div>
+                  <div class="xray-image-label">CNN + Grad-CAM</div>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:13px; font-weight:600; margin-bottom:var(--space-2);">AI 판정 결과</div>
+                  <table style="font-size:12px; width:100%;">
+                    <tr><td style="color:var(--color-text-secondary); padding: 3px 0;">판정</td><td><span class="badge critical">NG</span></td></tr>
+                    <tr><td style="color:var(--color-text-secondary); padding: 3px 0;">이물 종류</td><td><strong>뼈 조각 (bone)</strong></td></tr>
+                    <tr><td style="color:var(--color-text-secondary); padding: 3px 0;">크기</td><td>약 3.2mm</td></tr>
+                    <tr><td style="color:var(--color-text-secondary); padding: 3px 0;">위치</td><td>중앙 우측 상단</td></tr>
+                  </table>
+                  <div class="ai-confidence mt-2">
+                    <span style="font-size:11px;">CNN 신뢰도</span>
+                    <div class="confidence-bar"><div class="confidence-fill" style="width:96%;"></div></div>
+                    <strong>96%</strong>
+                  </div>
+                  <div class="divider" style="margin: var(--space-2) 0;"></div>
+                  <div style="font-size:11px; color:var(--color-text-secondary);">해당 개체 자동 배제 완료 · LOT DS-20261201-HMR001-0001에 기록</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HACCP AI Agent -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🤖 HACCP AI Agent 권고</div>
+              <span class="badge info">RAG 기반</span>
+            </div>
+            <div class="card-body" style="padding:var(--space-3);">
+              <div style="background: rgba(15,76,129,0.05); border-radius:var(--radius-sm); padding:var(--space-3); font-size:13px; line-height:1.7; border-left:3px solid var(--color-primary);">
+                <strong>B라인 CCP-1 이탈 대응 절차:</strong><br>
+                1. 즉시 생산 중단 및 해당 LOT <span class="badge critical">ON_HOLD</span> 처리<br>
+                2. 시정조치 기록지 작성 (HACCP 양식 7호)<br>
+                3. 살균 온도 이탈 원인 파악 (센서 오작동 vs 설비 고장)<br>
+                4. 재검증 완료 전까지 해당 LOT 출하 금지
+              </div>
+              <div class="ai-confidence mt-2">
+                <span style="font-size:11px;">출처: HACCP 관리계획서 v2026-3 §4.2</span>
+                <div class="confidence-bar"><div class="confidence-fill" style="width:94%;"></div></div>
+                <strong>94%</strong>
+              </div>
+              <div style="margin-top:var(--space-3); display:flex; gap:var(--space-2);">
+                <button class="btn btn-primary btn-sm">시정조치 양식 출력</button>
+                <button class="btn btn-outline btn-sm">상세 질문하기</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

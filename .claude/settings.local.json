@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where pdftotext *)",
+      "Bash(where mutool *)",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(pdftotext *)",
+      "Skill(bkit:phase-1-schema)",
+      "Skill(bkit:phase-2-convention)",
+      "Skill(bkit:phase-3-mockup)",
+      "Skill(bkit:phase-4-api)",
+      "Skill(bkit:phase-5-design-system)",
+      "Bash(docker info *)",
+      "Bash(docker context ls *)",
+      "Bash(docker context *)"
+    ]
+  }
+}

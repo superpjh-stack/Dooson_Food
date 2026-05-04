@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_DB: dooson_mes
+      POSTGRES_USER: mes_user
+      POSTGRES_PASSWORD: mes_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_demo:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mes_user -d dooson_mes"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  # DB 마이그레이션 + 시드 데이터 투입 (1회 실행 후 종료)
+  migrate:
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile.dev
+    environment:
+      DB_HOST: postgres
+      DB_NAME: dooson_mes
+      DB_USER: mes_user
+      DB_PASSWORD: mes_pass
+      DB_PORT: "5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo '⏳ Alembic 마이그레이션 실행...' &&
+        alembic upgrade head &&
+        echo '✅ 마이그레이션 완료' &&
+        echo '⏳ 시드 데이터 투입...' &&
+        python -m seeds.seed_data &&
+        echo '✅ 시드 완료'
+      "
+    restart: "no"
+
+  api:
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_NAME: dooson_mes
+      DB_USER: mes_user
+      DB_PASSWORD: mes_pass
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379
+      DEBUG: "true"
+      JWT_SECRET: "demo-secret-change-in-production"
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001"]'
+    volumes:
+      - ../../services/api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_WS_URL: ws://localhost:8000
+    volumes:
+      - ../../apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+    command: npm run dev
+
+volumes:
+  pgdata_demo:

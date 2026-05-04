@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>두손푸드 AI-MES — 메인 대시보드</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+  <style>
+    .line-chart-svg { width: 100%; height: 100%; }
+    .chart-area { fill: rgba(15,76,129,0.08); }
+    .chart-line { fill: none; stroke: var(--color-primary-light); stroke-width: 2; }
+    .chart-line-ai { fill: none; stroke: var(--color-accent); stroke-width: 1.5; stroke-dasharray: 6 3; }
+    .chart-point { fill: var(--color-primary-light); }
+    .oee-ring-wrap { display:flex; gap:var(--space-4); justify-content:space-around; padding: var(--space-3) 0; }
+    .oee-item { text-align:center; }
+    .oee-pct { font-size:22px; font-weight:700; }
+    .oee-sub { font-size:11px; color:var(--color-text-secondary); margin-top:2px; }
+    .oee-arc { width:56px; height:28px; border:5px solid; border-color: transparent transparent; border-radius:28px 28px 0 0; margin:0 auto var(--space-1); display:block; }
+    .oee-arc.avail { border-top-color:var(--color-secondary); border-left-color:var(--color-secondary); border-right-color:var(--color-secondary); }
+    .oee-arc.perf  { border-top-color:var(--color-primary-light); border-left-color:var(--color-primary-light); border-right-color:var(--color-primary-light); }
+    .oee-arc.qual  { border-top-color:var(--color-accent); border-left-color:var(--color-accent); border-right-color:var(--color-accent); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">DS</div>
+      <div>
+        <div class="sidebar-logo-text">두손푸드 MES</div>
+        <div class="sidebar-logo-sub">AI 스마트공장</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">메인</div>
+      <a class="nav-item active" href="index.html"><span class="icon">📊</span> KPI 대시보드</a>
+      <a class="nav-item" href="#"><span class="icon">🔔</span> 알림센터 <span class="nav-badge">3</span></a>
+
+      <div class="nav-section-label">생산</div>
+      <a class="nav-item" href="#"><span class="icon">📋</span> 생산지시 관리</a>
+      <a class="nav-item" href="lot-trace.html"><span class="icon">🔗</span> LOT 추적</a>
+      <a class="nav-item" href="#"><span class="icon">🗂</span> BOM 관리</a>
+
+      <div class="nav-section-label">품질·안전</div>
+      <a class="nav-item" href="quality.html"><span class="icon">🌡</span> 품질 모니터링</a>
+      <a class="nav-item" href="#"><span class="icon">☢</span> X-Ray 검출</a>
+      <a class="nav-item" href="#"><span class="icon">✅</span> HACCP 점검</a>
+
+      <div class="nav-section-label">설비</div>
+      <a class="nav-item" href="#"><span class="icon">⚙</span> 설비 현황</a>
+      <a class="nav-item" href="#"><span class="icon">🔧</span> 정비 관리</a>
+
+      <div class="nav-section-label">AI</div>
+      <a class="nav-item" href="#"><span class="icon">🤖</span> AI Agent</a>
+      <a class="nav-item" href="#"><span class="icon">📈</span> ML 모델 관리</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">김</div>
+        <div>
+          <div class="user-name">김공장장</div>
+          <div class="user-role">공장장 · 관리자</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">KPI 대시보드</div>
+        <div class="topbar-meta">2026-12-01 (월) · 14:38 · 주간 생산 3일차</div>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge critical">🚨 긴급 알림 2건</span>
+        <button class="btn btn-outline btn-sm">📤 보고서 출력</button>
+        <button class="btn btn-primary btn-sm">+ 생산지시 등록</button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- KPI Cards -->
+      <div class="grid grid-4 mb-4" style="grid-template-columns: repeat(5,1fr);">
+        <div class="kpi-card green">
+          <div class="kpi-label">생산 달성률</div>
+          <div class="kpi-value">94<span class="kpi-unit">%</span></div>
+          <div class="kpi-delta up">▲ 2.1% 전일 대비</div>
+          <div class="kpi-icon">🏭</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">품질 합격률</div>
+          <div class="kpi-value">99.1<span class="kpi-unit">%</span></div>
+          <div class="kpi-delta up">▲ 0.3%</div>
+          <div class="kpi-icon">✅</div>
+        </div>
+        <div class="kpi-card orange">
+          <div class="kpi-label">설비 OEE</div>
+          <div class="kpi-value">87.5<span class="kpi-unit">%</span></div>
+          <div class="kpi-delta down">▼ 1.2% (B라인 이상)</div>
+          <div class="kpi-icon">⚙</div>
+        </div>
+        <div class="kpi-card cyan">
+          <div class="kpi-label">LOT 추적 자동화</div>
+          <div class="kpi-value">100<span class="kpi-unit">%</span></div>
+          <div class="kpi-delta up">목표 달성</div>
+          <div class="kpi-icon">🔗</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">CCP 준수율</div>
+          <div class="kpi-value">98.7<span class="kpi-unit">%</span></div>
+          <div class="kpi-delta down">▼ 이탈 1건 발생</div>
+          <div class="kpi-icon">🌡</div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-4);">
+
+        <!-- Left Column -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+
+          <!-- 오늘의 생산지시 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 오늘의 생산지시 현황</div>
+              <a href="#" style="font-size:12px; color:var(--color-primary);">전체 보기 →</a>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>작업지시</th><th>제품</th><th>라인</th>
+                    <th>진행률</th><th>실적/목표</th><th>상태</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="font-mono">WO-20261201-0001</td>
+                    <td>햄버거패티 200g</td>
+                    <td>A라인</td>
+                    <td style="min-width:120px;">
+                      <div class="flex items-center gap-2">
+                        <div class="progress-bar" style="flex:1;"><div class="progress-fill green" style="width:92%"></div></div>
+                        <span style="font-size:12px;font-weight:600;">92%</span>
+                      </div>
+                    </td>
+                    <td class="font-mono">1,840 / 2,000</td>
+                    <td><span class="badge info">진행중</span></td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">WO-20261201-0002</td>
+                    <td>떡갈비 150g</td>
+                    <td>B라인</td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="progress-bar" style="flex:1;"><div class="progress-fill green" style="width:100%"></div></div>
+                        <span style="font-size:12px;font-weight:600;">100%</span>
+                      </div>
+                    </td>
+                    <td class="font-mono">1,500 / 1,500</td>
+                    <td><span class="badge success">완료</span></td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">WO-20261201-0003</td>
+                    <td>너비아니 100g</td>
+                    <td>C라인</td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="progress-bar" style="flex:1;"><div class="progress-fill orange" style="width:33%"></div></div>
+                        <span style="font-size:12px;font-weight:600;">33%</span>
+                      </div>
+                    </td>
+                    <td class="font-mono">980 / 3,000</td>
+                    <td><span class="badge warning">진행중</span></td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">WO-20261201-0004</td>
+                    <td>갈비찜 HMR</td>
+                    <td>A라인</td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:0%"></div></div>
+                        <span style="font-size:12px;font-weight:600;">0%</span>
+                      </div>
+                    </td>
+                    <td class="font-mono">0 / 800</td>
+                    <td><span class="badge neutral">예정</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 설비 현황 + OEE -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚙ 설비 현황 및 OEE</div>
+              <span class="text-muted">실시간 업데이트</span>
+            </div>
+            <div class="card-body">
+              <div class="oee-ring-wrap">
+                <div class="oee-item">
+                  <div class="oee-arc avail"></div>
+                  <div class="oee-pct" style="color:var(--color-secondary);">91.2%</div>
+                  <div class="oee-sub">A라인 가동률</div>
+                </div>
+                <div class="oee-item">
+                  <div class="oee-arc" style="border-top-color:var(--color-critical);border-left-color:var(--color-critical);border-right-color:var(--color-critical);"></div>
+                  <div class="oee-pct" style="color:var(--color-critical);">0%</div>
+                  <div class="oee-sub">B라인 (정지)</div>
+                </div>
+                <div class="oee-item">
+                  <div class="oee-arc perf"></div>
+                  <div class="oee-pct" style="color:var(--color-primary-light);">85.4%</div>
+                  <div class="oee-sub">C라인 가동률</div>
+                </div>
+                <div class="oee-item">
+                  <div class="oee-arc qual"></div>
+                  <div class="oee-pct" style="color:var(--color-accent);">87.5%</div>
+                  <div class="oee-sub">전체 OEE</div>
+                </div>
+              </div>
+              <div style="margin-top:var(--space-3);">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>설비</th><th>상태</th><th>OEE</th><th>비고</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>A라인 살균기</td>
+                        <td><span class="status-dot running"></span> 정상 가동</td>
+                        <td><strong>91.2%</strong></td>
+                        <td class="text-muted">온도 122.1°C ✓</td>
+                      </tr>
+                      <tr style="background: var(--color-critical-bg);">
+                        <td>B라인 살균기</td>
+                        <td><span class="status-dot fault"></span> <strong style="color:var(--color-critical)">고장 정지</strong></td>
+                        <td>—</td>
+                        <td><span class="badge critical">CCP 이탈</span></td>
+                      </tr>
+                      <tr>
+                        <td>C라인 충진기</td>
+                        <td><span class="status-dot running"></span> 가동 중</td>
+                        <td>85.4%</td>
+                        <td><span class="badge warning">진동 이상 감지</span></td>
+                      </tr>
+                      <tr>
+                        <td>X-Ray #1</td>
+                        <td><span class="status-dot running"></span> 정상 가동</td>
+                        <td>98.1%</td>
+                        <td class="text-muted">오늘 NG 3건</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+
+          <!-- 알림센터 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🔔 실시간 알림</div>
+              <span class="badge critical">긴급 2</span>
+            </div>
+            <div class="card-body" style="padding: var(--space-3);">
+              <div class="alert-item critical">
+                <div class="alert-icon">🚨</div>
+                <div>
+                  <div class="alert-title">CCP-2 온도 이탈 감지</div>
+                  <div class="alert-body">B라인 살균기 118.3°C — LOT 보류 처리됨</div>
+                  <div class="alert-time">2분 전 · <a href="lot-trace.html" style="color:var(--color-primary);">LOT 확인 →</a></div>
+                </div>
+              </div>
+              <div class="alert-item warning">
+                <div class="alert-icon">⚠</div>
+                <div>
+                  <div class="alert-title">F-value AI 예측 경보</div>
+                  <div class="alert-body">A라인 F0 미달 예측 — 15분 내 조치 권장</div>
+                  <div class="alert-time">8분 전</div>
+                </div>
+              </div>
+              <div class="alert-item warning">
+                <div class="alert-icon">🔧</div>
+                <div>
+                  <div class="alert-title">설비 고장 예측</div>
+                  <div class="alert-body">C라인 충진기 — 4시간 내 고장 확률 73%</div>
+                  <div class="alert-time">23분 전 · AI LSTM 예측</div>
+                </div>
+              </div>
+              <div class="alert-item info">
+                <div class="alert-icon">📦</div>
+                <div>
+                  <div class="alert-title">LOT 출하 완료</div>
+                  <div class="alert-body">13개 LOT 출하 처리 완료</div>
+                  <div class="alert-time">1시간 전</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Agent -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🤖 AI Agent 상담</div>
+              <span class="badge success">온라인</span>
+            </div>
+            <div class="card-body" style="padding:var(--space-3);">
+              <div style="background:var(--color-surface-2); border-radius:var(--radius-sm); padding:var(--space-3); margin-bottom:var(--space-3); font-size:13px;">
+                <div style="color:var(--color-text-secondary); font-size:11px; margin-bottom:var(--space-1);">🤖 HACCP AI Agent</div>
+                B라인 살균기 CCP-2 이탈 건: <strong>즉시 생산 중단</strong> 후 시정조치 기록 필요합니다. 해당 LOT(DS-20261201-떡갈비-003)는 재검증 완료 전까지 출하 보류하세요.
+                <div class="ai-confidence mt-2">
+                  <span>신뢰도</span>
+                  <div class="confidence-bar"><div class="confidence-fill" style="width:94%"></div></div>
+                  <strong>94%</strong>
+                  <span style="margin-left:4px;color:var(--color-text-muted);">· HACCP SOP 2026-v3</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:var(--space-2);">
+                <input type="text" placeholder="AI Agent에게 질문하세요..."
+                       style="flex:1; padding:var(--space-2) var(--space-3); border:1px solid var(--color-border); border-radius:var(--radius-sm); font-size:13px; outline:none;" />
+                <button class="btn btn-primary btn-sm">전송</button>
+              </div>
+              <div style="display:flex; gap:var(--space-2); margin-top:var(--space-2); flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm">CCP 이탈 대응 방법</button>
+                <button class="btn btn-outline btn-sm">LOT 회수 시뮬레이션</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- F-value 트렌드 (간략) -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🌡 F-value 실시간 (A라인)</div>
+              <span class="text-muted">최근 1시간</span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex; justify-content:space-between; margin-bottom:var(--space-3);">
+                <div>
+                  <div style="font-size:24px; font-weight:700; color:var(--color-secondary);">10.4 <span style="font-size:14px; color:var(--color-text-secondary);">분</span></div>
+                  <div class="text-muted">현재 F0 (목표: ≥ 10분)</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="badge success">✓ 기준 충족</div>
+                  <div class="text-muted mt-2">AI 예측: <strong>10.8분</strong></div>
+                  <div class="ai-confidence" style="justify-content:flex-end;">
+                    <div class="confidence-bar" style="width:60px;"><div class="confidence-fill" style="width:88%"></div></div>
+                    <span>88%</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Mini chart bars -->
+              <div class="mini-chart">
+                <div class="mini-bar" style="height:60%;"></div>
+                <div class="mini-bar" style="height:70%;"></div>
+                <div class="mini-bar" style="height:75%;"></div>
+                <div class="mini-bar" style="height:65%;"></div>
+                <div class="mini-bar" style="height:80%;"></div>
+                <div class="mini-bar" style="height:85%;"></div>
+                <div class="mini-bar" style="height:78%;"></div>
+                <div class="mini-bar" style="height:82%;"></div>
+                <div class="mini-bar highlight" style="height:90%;"></div>
+              </div>
+              <div class="divider"></div>
+              <a href="quality.html" style="font-size:12px; color:var(--color-primary);">품질 모니터링 상세 →</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
